@@ -1,0 +1,144 @@
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f38282;
+    /* Set your desired background color */
+    overflow: hidden;
+    /* Disable scrolling */
+    padding-top: constant(safe-area-inset-top);
+    /* For iOS */
+    padding-top: env(safe-area-inset-top);
+    /* For iOS 11.2+ */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    height: 100vh;
+    text-align: center;
+}
+
+h1 {
+    top: 0;
+    font-weight: bolder;
+    font-size: 72px;
+    font-family: "Arial Rounded MT Bold", sans-serif;
+    font-style: italic;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: .6;
+}
+
+.switch {
+    display: inline-block;
+    height: 44px;
+    position: relative;
+    width: 70px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #ccc;
+    border-radius: 34px;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+}
+
+.slider.volume {
+    right: 0;
+    left: auto;
+    /* Adjusted */
+}
+
+.slider.round:before {
+    background-color: white;
+    border-radius: 50%;
+    bottom: 4px;
+    content: "";
+    height: 36px;
+    left: 4px;
+    position: absolute;
+    transition: .4s;
+    width: 36px;
+}
+
+input:checked+.slider {
+    background-color: #2196F3;
+}
+
+input:focus+.slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+button,
+input[type="range"] {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 34px;
+    border: none;
+    border-radius: 5px;
+    background-color: #2196F3;
+    color: white;
+    cursor: pointer;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 95%;
+    background: #ccc;
+    outline: none;
+    opacity: 0.7;
+    transition: .2s;
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 80px;
+    background: #dad4d4;
+    cursor: pointer;
+    border-radius: 15px;
+    color:pink;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #d7ded7;
+    cursor: pointer;
+}

@@ -1,0 +1,21 @@
+{
+  "name": "bark-drterrent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "mic": "^2.1.2",
+    "node-mic": "^1.0.1",
+    "node-microphone": "^0.1.6",
+    "node-record-lpcm16": "^1.0.1",
+    "nodemon": "^3.1.0",
+    "record": "^0.2.0",
+    "speaker": "^0.5.4"
+  }
+}
