@@ -16,6 +16,7 @@
     "node-record-lpcm16": "^1.0.1",
     "nodemon": "^3.1.0",
     "record": "^0.2.0",
+    "socketio": "^1.0.0",
     "speaker": "^0.5.4"
   }
 }

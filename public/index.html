@@ -5,10 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Website</title>
+<script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="css/style.css">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="viewport"
         content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        
 </head>
 
 <body>
@@ -23,11 +25,13 @@
                 <input type="checkbox" id="powerSwitch">
                 <span class="slider round"></span>
             </label>
-            <button class="frequency">Low</button>
-            <button class="frequency">Medium</button>
-            <button class="frequency">High</button>
+            <button id="frequencyLow" class="frequency">Low</button>
+            <button id="frequencyMedium" class="frequency">Medium</button>
+            <button id="frequencyHigh" class="frequency">High</button>
             <input type="range" min="15000" max="30000" value="30000" class="slider volume" id="volumeSlider">
         </div>
+
+
         <script src="js/script.js"></script>
 </body>
 

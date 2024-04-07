@@ -16,6 +16,10 @@ body {
     /* For iOS 11.2+ */
 }
 
+.frequency{
+    width:100%;
+}
+
 .container {
     display: flex;
     flex-direction: column;

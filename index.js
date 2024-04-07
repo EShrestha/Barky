@@ -4,8 +4,18 @@ const Speaker = require('speaker');
 const { Readable } = require('stream');
 const record = require('node-record-lpcm16');
 const fs = require("fs")
+const socket = require("socket.io")
 
+const port = process.env.PORT || 3000;
 const app = express();
+const server = app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+var io = socket(server)
 
 // Function to read configuration from bark.config file
 function readConfig() {
@@ -32,6 +42,30 @@ function getHighToneFrequency() {
     return config.lowToneFrequency;
 }
 
+
+function updateIsOn(isOn) {
+    try {
+        const config = readConfig();
+        config.isOn = isOn;
+        fs.writeFileSync('bark.config', JSON.stringify(config, null, 2));
+        
+    } catch (err) {
+        return false;
+    }
+    return true;
+}
+
+function updateThreshold(threshold) {
+    try {
+        const config = readConfig();
+        config.threshold = threshold;
+        fs.writeFileSync('bark.config', JSON.stringify(config, null, 2));
+        
+    } catch (err) {
+        return false;
+    }
+    return true;
+}
 // Function to generate a sine wave buffer
 function generateSineWave(duration, frequency, sampleRate) {
     const numSamples = duration * sampleRate;
@@ -59,31 +93,32 @@ function playTone(frequency, duration) {
     stream.pipe(speaker);
 }
 
-// Middleware to play tone
-function playToneLow(req, res, next) {
-    playTone(20000, 2);
-    next();
-}
-
-function playToneMedium(req, res, next) {
-    playTone(22500, 2);
-    next();
-}
-
-function playToneHigh(req, res, next) {
-    playTone(25000, 2);
-    next();
-}
-
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-
 /// Initial vlaues
 let threshold = getThreshold();
 let lowTone = getLowToneFrequency();
 let mediumTone = getMediumToneFrequency();
 let highTone = getHighToneFrequency();
+
+// Middleware to play tone
+function playToneLow(req, res, next) {
+    playTone(lowTone, 2);
+    if (next){next()}
+}
+
+function playToneMedium(req, res, next) {
+    playTone(mediumTone, 2);
+    if (next){next()}
+
+}
+
+function playToneHigh(req, res, next) {
+    playTone(highTone, 2);
+    if (next){next()}
+
+}
+
+
+
 
 // Sound detection and action
 record
@@ -92,11 +127,11 @@ record
     .on('data', (data) => {
         // Calculate amplitude and check if it exceeds threshold
         const amplitude = calculateAmplitude(data);
-        console.log("AMP:" + amplitude + " THRESHOLD: " + threshold);
+        console.log("THRESHOLD: " + threshold + " | AMPLITUDE:" + amplitude );
         if (amplitude > threshold) {
             // Trigger action when sound exceeds threshold
             console.log('Sound detected, AMP:', amplitude); // Example action
-            playTone(1000, 1)
+            playTone(highTone, 1)
         }
     })
     .on('error', (err) => {
@@ -116,29 +151,72 @@ function calculateAmplitude(buffer) {
     return maxAmplitude;
 }
 
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 
 })
 
-// Define routes
-app.get('/playToneLow', playToneLow, (req, res) => {
-    console.log('Route hit');
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
-app.get('/playToneMedium', playToneMedium, (req, res) => {
-    console.log('Route hit');
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
-app.get('/playToneHigh', playToneHigh, (req, res) => {
-    console.log('Route hit');
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
-// Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+
+
+//// SOCKET IO ////
+io.on('connection', (socket) => {
+    console.log('A client connected');
+    
+    // Emit initial threshold value to newly connected client
+    socket.emit('initialConfig', readConfig());
+
+    socket.on("turnOn", (cb) => {
+        if (updateIsOn(true)) {
+            socket.broadcast.emit("turnOn")
+            cb(true)
+            
+        } else {
+            cb(false)
+        }
+    })
+    
+    socket.on("turnOff", (cb) => {
+        console.log("HERE")
+        if (updateIsOn(false)) {
+            socket.broadcast.emit("turnOff")
+            cb(true)
+            
+        } else {
+            cb(false)
+        }
+    })
+
+    // Handle client updates to threshold
+    socket.on('updateThreshold', (value, cb) => {
+        console.log("THRESHHOLD VALUE:", value)
+        if (updateThreshold(value)) {
+            threshold = value;
+            socket.broadcast.emit("updateThreshold", value)
+            cb(true)
+            
+        } else {
+            cb(false)
+        }
+    });
+    
+    socket.on('playToneLow', () => {
+        playToneLow();
+    });
+
+    socket.on('playToneMedium', () => {
+        playToneMedium();
+    });
+    
+    socket.on('playToneHigh', () => {
+        playToneHigh();
+    });
+    
+    // Handle disconnection
+    socket.on('disconnect', () => {
+        console.log('A client disconnected');
+    });
 });
