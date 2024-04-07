@@ -1,20 +1,13 @@
-document.addEventListener('DOMContentLoaded', async () => {
-
-});
-
-
 const socket = io.connect("http://192.168.0.100:3000");
 const powerSwitch = document.getElementById('powerSwitch');
 const frequencyButtons = document.querySelectorAll('.frequency');
-const volumeSlider = document.getElementById('volumeSlider');
+const thresholdSlider = document.getElementById('thresholdSlider');
 const thresholdText = document.getElementById('threshold');
 
     frequencyButtons.forEach(button => {
         button.addEventListener('click', () => {
-            // Get the ID of the current button
             const buttonId = button.id;
 
-            // Perform a switch statement based on the button ID
             switch(buttonId) {
                 case 'frequencyLow':
                     socket.emit("playToneLow")
@@ -25,15 +18,13 @@ const thresholdText = document.getElementById('threshold');
                 case 'frequencyHigh':
                     socket.emit("playToneHigh")
                     break;
-                // Add more cases as needed
                 default:
-                    // Default case if the button ID doesn't match any case
+                    console.log("👀")
             }
         });
     });
 
 powerSwitch.addEventListener('change', (evt) => {
-    // Send request to backend to toggle power
     if (powerSwitch.checked) {
         socket.emit("turnOn", (success) => {
             if (success) {on();}
@@ -45,9 +36,7 @@ powerSwitch.addEventListener('change', (evt) => {
     }
 });
 
-volumeSlider.addEventListener('input', (evt) => {
-    // Send request to backend to set volume
-    console.log("THRESH:", evt.target.value)
+thresholdSlider.addEventListener('input', (evt) => {
     socket.emit("updateThreshold", evt.target.value, (success) => {
         if (success) {
             thresholdText.innerText = "Threshold: " + evt.target.value;
@@ -60,7 +49,7 @@ const off = () => {
     frequencyButtons.forEach(button => {
         button.style.display = "none";
     });
-    volumeSlider.style.display = "none";
+    thresholdSlider.style.display = "none";
     thresholdText.style.display = "none";
     powerSwitch.checked = false;
     document.body.style.backgroundColor = "#f38282";
@@ -71,7 +60,7 @@ const on = () => {
     frequencyButtons.forEach(button => {
         button.style.display = "block";
     });
-    volumeSlider.style.display = "block";
+    thresholdSlider.style.display = "block";
     thresholdText.style.display = "block";
     powerSwitch.checked = true;
     document.body.style.backgroundColor = "#83f983";
@@ -85,7 +74,7 @@ socket.on('initialConfig', (config) => {
     console.log("Got initial config:", config)
     config.isOn ? on() : off();
     thresholdText.innerText = config.threshold
-    volumeSlider.value = config.threshold
+    thresholdSlider.value = config.threshold
 });
 
 socket.on("turnOn", () => {
@@ -97,6 +86,6 @@ socket.on("turnOff", () => {
 })
 
 socket.on("updateThreshold", (value) => {
-    volumeSlider.value = value;
+    thresholdSlider.value = value;
     thresholdText.innerText = value;
 })

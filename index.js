@@ -7,7 +7,7 @@ const fs = require("fs")
 const socket = require("socket.io")
 
 
-const DEBUG = false;
+const DEBUG = true;
 const debug = (msg) => { if (DEBUG) { console.log(msg) };}
 
 const port = process.env.PORT || 3000;
@@ -94,8 +94,13 @@ function generateSineWave(duration, frequency, sampleRate) {
     return buffer;
 }
 
-// Function to play a tone
+let isTonePlaying = false; 
 function playTone(frequency, duration) {
+    if (isTonePlaying) {
+        debug("Already playing tone")
+        return; // If a tone is already playing, do nothing
+    }
+    isTonePlaying = true;
     const sampleRate = 44100; // 44.1 kHz sample rate
     const buffer = generateSineWave(duration, frequency, sampleRate);
     const speaker = new Speaker({
@@ -107,6 +112,10 @@ function playTone(frequency, duration) {
     stream.push(buffer);
     stream.push(null); // Signal end of data
     stream.pipe(speaker);
+
+    setTimeout(() => {
+        isTonePlaying = false;
+    }, duration * 1000 + 100); // Adding some buffer time to ensure the tone has finished playing
 }
 
 
@@ -120,7 +129,7 @@ record
         debug("THRESHOLD: " + threshold + " | AMPLITUDE:" + amplitude);
         if (amplitude > threshold) {
             // Trigger action when sound exceeds threshold
-            debug('THRESHOLD EXCEEDED. AMPLITUDE:v', amplitude);
+            debug('THRESHOLD EXCEEDED. AMPLITUDE:', amplitude);
             playTone(defaultAutoTone, 2)
         }
     })
