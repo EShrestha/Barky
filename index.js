@@ -6,10 +6,14 @@ const record = require('node-record-lpcm16');
 const fs = require("fs")
 const socket = require("socket.io")
 
+
+const DEBUG = false;
+const debug = (msg) => { if (DEBUG) { console.log(msg) };}
+
 const port = process.env.PORT || 3000;
 const app = express();
 const server = app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    debug(`Server is running on port ${port}`);
 });
 
 // Serve static files from the 'public' directory
@@ -20,6 +24,11 @@ var io = socket(server)
 // Function to read configuration from bark.config file
 function readConfig() {
     return JSON.parse(fs.readFileSync('bark.config', 'utf-8'));
+}
+
+function getIsOn() {
+    const config = readConfig();
+    return config.isOn;
 }
 
 // Function to get threshold from config
@@ -42,6 +51,13 @@ function getHighToneFrequency() {
     return config.lowToneFrequency;
 }
 
+/// Initial vlaues
+let isOn = getIsOn();
+let threshold = getThreshold();
+let lowTone = getLowToneFrequency();
+let mediumTone = getMediumToneFrequency();
+let highTone = getHighToneFrequency();
+let defaultAutoTone = highTone;
 
 function updateIsOn(isOn) {
     try {
@@ -93,49 +109,23 @@ function playTone(frequency, duration) {
     stream.pipe(speaker);
 }
 
-/// Initial vlaues
-let threshold = getThreshold();
-let lowTone = getLowToneFrequency();
-let mediumTone = getMediumToneFrequency();
-let highTone = getHighToneFrequency();
 
-// Middleware to play tone
-function playToneLow(req, res, next) {
-    playTone(lowTone, 2);
-    if (next){next()}
-}
-
-function playToneMedium(req, res, next) {
-    playTone(mediumTone, 2);
-    if (next){next()}
-
-}
-
-function playToneHigh(req, res, next) {
-    playTone(highTone, 2);
-    if (next){next()}
-
-}
-
-
-
-
-// Sound detection and action
+// Auto sound detection and action
 record
     .record()
     .stream()
     .on('data', (data) => {
         // Calculate amplitude and check if it exceeds threshold
         const amplitude = calculateAmplitude(data);
-        console.log("THRESHOLD: " + threshold + " | AMPLITUDE:" + amplitude );
+        debug("THRESHOLD: " + threshold + " | AMPLITUDE:" + amplitude);
         if (amplitude > threshold) {
             // Trigger action when sound exceeds threshold
-            console.log('Sound detected, AMP:', amplitude); // Example action
-            playTone(highTone, 1)
+            debug('THRESHOLD EXCEEDED. AMPLITUDE:v', amplitude);
+            playTone(defaultAutoTone, 2)
         }
     })
     .on('error', (err) => {
-        console.error('Error:', err);
+        debug('Error:', err);
     });
 
 // Function to calculate amplitude from audio buffer
@@ -159,18 +149,16 @@ app.get('/', (req, res) => {
 
 
 
-
-
-
 //// SOCKET IO ////
 io.on('connection', (socket) => {
-    console.log('A client connected');
+    debug('Client connected');
     
-    // Emit initial threshold value to newly connected client
+    // Emit initial values to newly connected client
     socket.emit('initialConfig', readConfig());
 
     socket.on("turnOn", (cb) => {
         if (updateIsOn(true)) {
+            isOn = true;
             socket.broadcast.emit("turnOn")
             cb(true)
             
@@ -180,8 +168,8 @@ io.on('connection', (socket) => {
     })
     
     socket.on("turnOff", (cb) => {
-        console.log("HERE")
         if (updateIsOn(false)) {
+            isOn = false;
             socket.broadcast.emit("turnOff")
             cb(true)
             
@@ -190,9 +178,7 @@ io.on('connection', (socket) => {
         }
     })
 
-    // Handle client updates to threshold
     socket.on('updateThreshold', (value, cb) => {
-        console.log("THRESHHOLD VALUE:", value)
         if (updateThreshold(value)) {
             threshold = value;
             socket.broadcast.emit("updateThreshold", value)
@@ -204,19 +190,19 @@ io.on('connection', (socket) => {
     });
     
     socket.on('playToneLow', () => {
-        playToneLow();
+        if (isOn) {playTone(lowTone, 2);}
     });
 
     socket.on('playToneMedium', () => {
-        playToneMedium();
+        if (isOn) {playTone(mediumTone, 2);}
     });
     
     socket.on('playToneHigh', () => {
-        playToneHigh();
+        if (isOn) {playTone(highTone, 2);}
     });
     
     // Handle disconnection
     socket.on('disconnect', () => {
-        console.log('A client disconnected');
+        debug('Client disconnected');
     });
 });
